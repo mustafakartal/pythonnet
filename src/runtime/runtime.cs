@@ -352,6 +352,8 @@ namespace Python.Runtime
             Runtime.PyList_Append(path, item);
             Runtime.XDecref(item);
             AssemblyManager.UpdatePath();
+            
+            PythonEngine.RunString("import sys; setattr(sys,'argv',[''])");
         }
 
         internal static void Shutdown()
