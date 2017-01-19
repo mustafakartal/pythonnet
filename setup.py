@@ -138,7 +138,8 @@ class PythonNET_BuildExt(build_ext):
             unicode_width = ctypes.sizeof(ctypes.c_wchar)
 
         defines = [
-            "PYTHON%d%s" % (sys.version_info[:2]),
+            "PYTHON%d%d" % (sys.version_info[:2]),
+            "PYTHON%d" % (sys.version_info[:1]),  # Python Major Version
             "UCS%d" % unicode_width,
         ]
 
@@ -153,7 +154,13 @@ class PythonNET_BuildExt(build_ext):
 
             # Check if --enable-shared was set when Python was built
             enable_shared = get_config_var("Py_ENABLE_SHARED")
-            if enable_shared == 0:
+            if enable_shared:
+                # Double-check if libpython is linked dynamically with python
+                lddout = _check_output(["ldd", sys.executable])
+                if 'libpython' not in lddout:
+                    enable_shared = False
+
+            if not enable_shared:
                 defines.append("PYTHON_WITHOUT_ENABLE_SHARED")
 
         if hasattr(sys, "abiflags"):
@@ -333,12 +340,12 @@ if __name__ == "__main__":
         author="Python for .Net developers",
         classifiers=[
             'Programming Language :: Python :: 2.7',
-            'Programming Language :: Python :: 3.2',
             'Programming Language :: Python :: 3.3',
             'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
             'Programming Language :: C#',
-            'License :: OSI Approved :: Zope Public License',
+            'License :: OSI Approved :: MIT License',
             'Development Status :: 5 - Production/Stable',
             'Intended Audience :: Developers',
             'Operating System :: Microsoft :: Windows',
