@@ -362,8 +362,24 @@ namespace Python.Runtime
             Runtime.PyList_Append(path, item);
             Runtime.XDecref(item);
             AssemblyManager.UpdatePath();
-            
-            PythonEngine.RunString("import sys; setattr(sys,'argv',[''])");
+
+            IntPtr sysmodule = Runtime.PyImport_ImportModule("sys");
+            IntPtr sysargv = Runtime.PyObject_GetAttrString(sysmodule, "argv");
+            //if sys.argv is available, no need to mess with it
+            if (sysargv == IntPtr.Zero) {
+                // Need to add at least the list with empty string to sys.argv,
+                // this is how python interpreter gets loaded in interactive mode
+                //PythonEngine.RunString("import sys; setattr(sys,'argv',[''])");
+
+                IntPtr pystrEmpty = PyString_FromString("");
+                IntPtr pylistargv = PyList_New(1);
+                Runtime.XIncref(pystrEmpty);
+                int r = Runtime.PyList_SetItem(pylistargv, 0, pystrEmpty);
+                if (r < 0) {
+                    throw new PythonException();
+                }
+                PySys_SetArgvEx(0, pylistargv, 0);
+            }
         }
 
         internal static void Shutdown()
@@ -2129,6 +2145,11 @@ namespace Python.Runtime
             ExactSpelling = true, CharSet = CharSet.Ansi)]
         internal unsafe static extern void
             PySys_SetArgv(int argc, IntPtr argv);
+
+        [DllImport(Runtime.dll, CallingConvention = CallingConvention.Cdecl,
+            ExactSpelling = true, CharSet = CharSet.Ansi)]
+        internal unsafe static extern void
+            PySys_SetArgvEx(int argc, IntPtr argv, int updatepath);
 
         [DllImport(Runtime.dll, CallingConvention = CallingConvention.Cdecl,
             ExactSpelling = true, CharSet = CharSet.Ansi)]

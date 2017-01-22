@@ -35,7 +35,8 @@ test_modules = (
     'test_indexer',
     'test_delegate',
     'test_array',
-    'test_thread'
+    'test_thread',
+    'test_sysargv'
 )
 
 
