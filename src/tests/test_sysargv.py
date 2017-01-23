@@ -6,7 +6,7 @@ class SysArgvTests(unittest.TestCase):
     """Test sys.argv state."""
     def testSysArgvState(self):
         """Test sys.argv state."""
-        argv = sys.argv
+        argv = list(sys.argv) # need to make a copy of list
         import clr
         self.assertTrue(argv == sys.argv)
 
