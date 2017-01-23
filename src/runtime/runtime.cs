@@ -367,18 +367,29 @@ namespace Python.Runtime
             IntPtr sysargv = Runtime.PyObject_GetAttrString(sysmodule, "argv");
             //if sys.argv is available, no need to mess with it
             if (sysargv == IntPtr.Zero) {
-                // Need to add at least the list with empty string to sys.argv,
-                // this is how python interpreter gets loaded in interactive mode
-                //PythonEngine.RunString("import sys; setattr(sys,'argv',[''])");
-
-                IntPtr pystrEmpty = PyString_FromString("");
-                IntPtr pylistargv = PyList_New(1);
-                Runtime.XIncref(pystrEmpty);
-                int r = Runtime.PyList_SetItem(pylistargv, 0, pystrEmpty);
-                if (r < 0) {
-                    throw new PythonException();
+                string[] clrargv;
+                try {
+                    clrargv = System.Environment.GetCommandLineArgs();
                 }
-                PySys_SetArgvEx(0, pylistargv, 0);
+                catch (NotSupportedException) {
+                    // some platforms do not support argv
+                    // Need to add at least the list with empty string to sys.argv,
+                    // this is how python interpreter gets loaded in interactive mode
+                    clrargv = new string[] { String.Empty };
+                }
+                int vi = 0;
+                int clrargc = clrargv.Length;
+                IntPtr pylistargv = PyList_New(clrargc);
+                foreach (string clrargvi in clrargv) {
+                    IntPtr pystrargvi = PyString_FromString(clrargvi);
+                    Runtime.XIncref(pystrargvi);
+                    int r = Runtime.PyList_SetItem(pylistargv, vi, pystrargvi);
+                    vi += 1;
+                    if (r < 0) {
+                        throw new PythonException();
+                    }
+                }
+                PySys_SetArgvEx(clrargc, pylistargv, 0);
             }
         }
 
